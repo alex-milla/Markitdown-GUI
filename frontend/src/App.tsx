@@ -3,6 +3,7 @@ import toast, { Toaster } from 'react-hot-toast';
 import LoginForm from './components/LoginForm';
 import Converter from './components/Converter';
 import History from './components/History';
+import AdminPanel from './components/AdminPanel';
 import { useTranslation } from './i18n/LanguageContext';
 import api from './api';
 import type { User } from './types';
@@ -11,7 +12,7 @@ function App() {
   const { t, lang, setLang } = useTranslation();
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState<'convert' | 'history'>('convert');
+  const [activeTab, setActiveTab] = useState<'convert' | 'history' | 'admin'>('convert');
 
   useEffect(() => {
     const token = localStorage.getItem('token');
@@ -111,9 +112,23 @@ function App() {
             >
               {t('history')}
             </button>
+            {user.is_admin && (
+              <button
+                onClick={() => setActiveTab('admin')}
+                className={`px-4 py-2 rounded-md text-sm font-medium transition ${
+                  activeTab === 'admin'
+                    ? 'bg-indigo-600 text-white'
+                    : 'bg-white border text-gray-700 hover:bg-gray-50'
+                }`}
+              >
+                {t('admin')}
+              </button>
+            )}
           </div>
 
-          {activeTab === 'convert' ? <Converter /> : <History />}
+          {activeTab === 'convert' && <Converter />}
+          {activeTab === 'history' && <History />}
+          {activeTab === 'admin' && user.is_admin && <AdminPanel />}
         </main>
       </div>
     </>

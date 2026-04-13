@@ -1,9 +1,31 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from app.database import engine, Base
+from app.database import engine, Base, SessionLocal
+from app.models import User
+from app.dependencies import get_password_hash
 from app.routers import auth, convert
 
 Base.metadata.create_all(bind=engine)
+
+# Seed default admin if no users exist
+def seed_admin():
+    db = SessionLocal()
+    try:
+        user_count = db.query(User).count()
+        if user_count == 0:
+            admin = User(
+                username="admin",
+                hashed_password=get_password_hash("admin"),
+                is_admin=True,
+                must_change_password=True,
+            )
+            db.add(admin)
+            db.commit()
+            print("Default admin user created: admin / admin")
+    finally:
+        db.close()
+
+seed_admin()
 
 app = FastAPI(title="MarkItDown GUI", version="1.0.0")
 
