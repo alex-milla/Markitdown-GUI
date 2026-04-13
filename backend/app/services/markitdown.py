@@ -1,32 +1,33 @@
 import os
-import subprocess
-import shlex
-import sys
 
-
-def _find_markitdown() -> str:
-    # Try the same Python interpreter's scripts directory
-    scripts_dir = os.path.join(os.path.dirname(sys.executable), "markitdown")
-    if os.path.isfile(scripts_dir):
-        return scripts_dir
-    # Fallback to PATH lookup
-    return "markitdown"
+try:
+    from markitdown import MarkItDown
+except ImportError as exc:  # pragma: no cover
+    MarkItDown = None  # type: ignore[misc,assignment]
+    _import_error = exc
 
 
 def run_markitdown(input_path: str, output_path: str) -> None:
     """
-    Runs the markitdown CLI on input_path and writes the result to output_path.
+    Converts input_path to Markdown using the Microsoft markitdown library
+    and writes the result to output_path.
     Raises RuntimeError on failure.
     """
-    cmd = f"{_find_markitdown()} {shlex.quote(input_path)}"
-    result = subprocess.run(
-        cmd,
-        shell=True,
-        capture_output=True,
-        text=True,
-    )
-    if result.returncode != 0:
-        error = result.stderr.strip() or "Unknown error from markitdown"
-        raise RuntimeError(error)
+    if MarkItDown is None:
+        raise RuntimeError(
+            f"markitdown is not installed in the current Python environment: {_import_error}"
+        )
+
+    md = MarkItDown()
+    result = md.convert(input_path)
+
+    text = result.markdown if hasattr(result, "markdown") else str(result)
+    if not text.strip():
+        raise RuntimeError(
+            "markitdown produced empty output. "
+            "This usually means the file format is not supported or the document is empty. "
+            "Ensure you are using a supported format (e.g., .docx, .xlsx, .pptx, .pdf)."
+        )
+
     with open(output_path, "w", encoding="utf-8") as f:
-        f.write(result.stdout)
+        f.write(text)

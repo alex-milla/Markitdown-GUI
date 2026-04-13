@@ -45,20 +45,23 @@ async def upload_file(
     try:
         run_markitdown(input_path, output_path)
     except Exception as exc:
-        # cleanup input on failure
-        if os.path.exists(input_path):
-            os.remove(input_path)
+        # cleanup output on failure; input is cleaned in finally below
+        if os.path.exists(output_path):
+            os.remove(output_path)
         raise HTTPException(status_code=500, detail=f"Conversion failed: {exc}")
     finally:
         # remove original uploaded file after conversion
         if os.path.exists(input_path):
             os.remove(input_path)
 
+    if not os.path.exists(output_path) or os.path.getsize(output_path) == 0:
+        raise HTTPException(status_code=500, detail="Conversion failed: output file is empty")
+
     conversion = Conversion(
         owner_id=current_user.id,
         original_filename=file.filename,
         stored_filename=output_name,
-        file_size=os.path.getsize(output_path) if os.path.exists(output_path) else 0,
+        file_size=os.path.getsize(output_path),
         created_at=datetime.utcnow(),
     )
     db.add(conversion)

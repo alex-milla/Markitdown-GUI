@@ -107,9 +107,20 @@ if [ ! -f "\$TRIGGER" ]; then
     exit 0
 fi
 
-echo "[\$(date '+%Y-%m-%d %H:%M:%S')] Upgrade triggered." >> "\$LOG_FILE"
 rm -f "\$TRIGGER"
 cd "\$PROJECT_DIR"
+git fetch origin >> "\$LOG_FILE" 2>&1
+
+BRANCH=\$(git rev-parse --abbrev-ref HEAD)
+LOCAL=\$(git rev-parse HEAD)
+REMOTE=\$(git rev-parse "origin/\$BRANCH" || true)
+
+if [ "\$LOCAL" = "\$REMOTE" ]; then
+    echo "[\$(date '+%Y-%m-%d %H:%M:%S')] No updates available (already on \$BRANCH \$LOCAL)." >> "\$LOG_FILE"
+    exit 0
+fi
+
+echo "[\$(date '+%Y-%m-%d %H:%M:%S')] Upgrade triggered." >> "\$LOG_FILE"
 git pull >> "\$LOG_FILE" 2>&1
 "\$PROJECT_DIR/scripts/update.sh" >> "\$LOG_FILE" 2>&1
 echo "[\$(date '+%Y-%m-%d %H:%M:%S')] Upgrade completed." >> "\$LOG_FILE"

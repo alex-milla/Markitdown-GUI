@@ -13,6 +13,7 @@ export default function AdminPanel() {
   const [creating, setCreating] = useState(false);
 
   const [upgradePending, setUpgradePending] = useState(false);
+  const [upgradeAvailable, setUpgradeAvailable] = useState(false);
   const [upgradeLog, setUpgradeLog] = useState('');
   const [upgrading, setUpgrading] = useState(false);
 
@@ -39,10 +40,23 @@ export default function AdminPanel() {
     }
   };
 
+  const fetchUpgradeCheck = async () => {
+    try {
+      const res = await api.get('/auth/upgrade/check');
+      setUpgradeAvailable(res.data.available);
+    } catch {
+      setUpgradeAvailable(false);
+    }
+  };
+
   useEffect(() => {
     fetchUsers();
     fetchUpgradeStatus();
-    const interval = setInterval(fetchUpgradeStatus, 5000);
+    fetchUpgradeCheck();
+    const interval = setInterval(() => {
+      fetchUpgradeStatus();
+      fetchUpgradeCheck();
+    }, 15000);
     return () => clearInterval(interval);
   }, []);
 
@@ -85,9 +99,13 @@ export default function AdminPanel() {
       const res = await api.post('/auth/upgrade');
       toast.success(res.data.detail);
       setUpgradePending(true);
+      setUpgradeAvailable(false);
     } catch (err: any) {
       const detail = err.response?.data?.detail;
       toast.error(detail || t('errors.generic'));
+      if (detail === 'Already up to date') {
+        setUpgradeAvailable(false);
+      }
     } finally {
       setUpgrading(false);
     }
@@ -100,10 +118,14 @@ export default function AdminPanel() {
           <h3 className="text-lg font-semibold">{t('adminPanel.systemTitle')}</h3>
           <button
             onClick={handleUpgrade}
-            disabled={upgrading || upgradePending}
+            disabled={upgrading || upgradePending || !upgradeAvailable}
             className="bg-emerald-600 text-white px-4 py-2 rounded-md font-medium hover:bg-emerald-700 disabled:opacity-60 transition"
           >
-            {upgradePending ? t('adminPanel.upgradePending') : t('adminPanel.upgradeBtn')}
+            {upgradePending
+              ? t('adminPanel.upgradePending')
+              : upgradeAvailable
+              ? t('adminPanel.upgradeBtn')
+              : t('adminPanel.upgradeNoUpdates')}
           </button>
         </div>
         {upgradePending && (

@@ -1,15 +1,65 @@
 import os
+import subprocess
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 from app.database import get_db
 from app.models import User
 from app.schemas import UserCreate, UserOut, LoginResponse, ChangePasswordPayload
 from app.dependencies import get_password_hash, verify_password, create_access_token, get_current_user, require_admin
+from app.config import PROJECT_DIR
 
 router = APIRouter()
 
 UPGRADE_TRIGGER = "/opt/markitdown-gui/.upgrade-requested"
 UPGRADE_LOG = "/var/log/markitdown-upgrade.log"
+
+
+def _check_upgrade_available() -> tuple[bool, str]:
+    if not os.path.isdir(os.path.join(PROJECT_DIR, ".git")):
+        return False, "Project directory is not a git repository"
+
+    try:
+        subprocess.run(
+            ["git", "fetch", "origin"],
+            cwd=PROJECT_DIR,
+            check=True,
+            capture_output=True,
+        )
+
+        branch_res = subprocess.run(
+            ["git", "rev-parse", "--abbrev-ref", "HEAD"],
+            cwd=PROJECT_DIR,
+            check=True,
+            capture_output=True,
+            text=True,
+        )
+        branch = branch_res.stdout.strip()
+
+        local_res = subprocess.run(
+            ["git", "rev-parse", "HEAD"],
+            cwd=PROJECT_DIR,
+            check=True,
+            capture_output=True,
+            text=True,
+        )
+        remote_res = subprocess.run(
+            ["git", "rev-parse", f"origin/{branch}"],
+            cwd=PROJECT_DIR,
+            check=True,
+            capture_output=True,
+            text=True,
+        )
+
+        local_hash = local_res.stdout.strip()
+        remote_hash = remote_res.stdout.strip()
+
+        if local_hash == remote_hash:
+            return False, "Already up to date"
+        return True, f"New version available on branch {branch}"
+    except subprocess.CalledProcessError as exc:
+        stderr = exc.stderr.strip() if exc.stderr else str(exc)
+        return False, f"Could not check for upgrades: {stderr}"
+
 
 
 @router.post("/register", response_model=UserOut)
@@ -88,10 +138,21 @@ def delete_user(
     return {"detail": "User deleted successfully"}
 
 
+@router.get("/upgrade/check")
+def check_upgrade(admin: User = Depends(require_admin)):
+    available, message = _check_upgrade_available()
+    return {"available": available, "message": message}
+
+
 @router.post("/upgrade")
 def trigger_upgrade(admin: User = Depends(require_admin)):
     if os.path.exists(UPGRADE_TRIGGER):
         raise HTTPException(status_code=409, detail="Upgrade already pending")
+
+    available, message = _check_upgrade_available()
+    if not available:
+        raise HTTPException(status_code=400, detail=message)
+
     try:
         with open(UPGRADE_TRIGGER, "w") as f:
             f.write("")

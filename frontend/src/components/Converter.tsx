@@ -9,8 +9,13 @@ function translateError(t: (key: string) => string, detail?: string): string {
     'Conversion failed': 'converter.error',
     'No filename provided': 'errors.generic',
   };
-  const key = detail && map[detail] ? map[detail] : 'errors.generic';
-  return t(key);
+  if (!detail) return t('errors.generic');
+  if (map[detail]) return t(map[detail]);
+  // If the backend sent a descriptive message after "Conversion failed: ", show it.
+  if (detail.startsWith('Conversion failed: ')) {
+    return detail.slice('Conversion failed: '.length);
+  }
+  return detail;
 }
 
 export default function Converter() {
@@ -86,6 +91,9 @@ export default function Converter() {
           </p>
           <p className="text-sm text-gray-500 mt-2">
             {t('converter.supportedFormats')}
+          </p>
+          <p className="text-xs text-amber-600 mt-2">
+            {t('converter.clearStructureHint')}
           </p>
         </label>
       </div>
