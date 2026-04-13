@@ -1,0 +1,19 @@
+[Unit]
+Description=MarkItDown GUI Backend (FastAPI/Uvicorn)
+After=network.target
+
+[Service]
+Type=exec
+User=markitdown
+Group=markitdown
+WorkingDirectory=/opt/markitdown-gui/backend
+Environment="DATABASE_URL=sqlite:////var/lib/markitdown-gui/data/markitdown.db"
+Environment="SECRET_KEY=change-me-in-production-please-use-a-long-random-string"
+Environment="ACCESS_TOKEN_EXPIRE_MINUTES=60"
+Environment="PATH=/opt/markitdown-gui/venv/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
+ExecStart=/opt/markitdown-gui/venv/bin/uvicorn app.main:app --host 127.0.0.1 --port 8000 --workers 2
+Restart=on-failure
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target
