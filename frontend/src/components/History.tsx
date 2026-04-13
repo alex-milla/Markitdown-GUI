@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import toast from 'react-hot-toast';
-import api from '../api';
+import api, { downloadConversion } from '../api';
 import { useTranslation } from '../i18n/LanguageContext';
 import type { Conversion } from '../types';
 
@@ -63,13 +63,17 @@ export default function History() {
               <td className="px-4 py-3 text-gray-600">{formatBytes(item.file_size)}</td>
               <td className="px-4 py-3 text-gray-600">{formatDate(item.created_at)}</td>
               <td className="px-4 py-3 text-right">
-                <a
-                  href={`/api/convert/download/${item.id}`}
-                  download
+                <button
+                  onClick={() => {
+                    const name = item.original_filename.replace(/\.[^/.]+$/, '') + '.md';
+                    downloadConversion(item.id, name).catch((err: any) => {
+                      toast.error(err.message || t('errors.generic'));
+                    });
+                  }}
                   className="inline-flex items-center px-3 py-1.5 rounded-md bg-indigo-50 text-indigo-700 hover:bg-indigo-100 transition"
                 >
                   {t('historyTable.download')}
-                </a>
+                </button>
               </td>
             </tr>
           ))}

@@ -1,6 +1,6 @@
 import { useState, useCallback } from 'react';
 import toast from 'react-hot-toast';
-import api from '../api';
+import api, { downloadConversion } from '../api';
 import { useTranslation } from '../i18n/LanguageContext';
 import type { Conversion } from '../types';
 
@@ -98,13 +98,17 @@ export default function Converter() {
               <p className="text-sm text-gray-600">{t('converter.originalFile')}</p>
               <p className="font-medium">{lastResult.original_filename}</p>
             </div>
-            <a
-              href={`/api/convert/download/${lastResult.id}`}
-              download
+            <button
+              onClick={() => {
+                const name = lastResult.original_filename.replace(/\.[^/.]+$/, '') + '.md';
+                downloadConversion(lastResult.id, name).catch((err: any) => {
+                  toast.error(err.message || t('errors.generic'));
+                });
+              }}
               className="inline-flex items-center justify-center px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 transition"
             >
               {t('converter.downloadMarkdown')}
-            </a>
+            </button>
           </div>
         </div>
       )}

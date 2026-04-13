@@ -23,4 +23,26 @@ api.interceptors.response.use(
   }
 );
 
+export async function downloadConversion(conversionId: number, filename: string) {
+  const token = localStorage.getItem('token');
+  const response = await fetch(`/api/convert/download/${conversionId}`, {
+    headers: {
+      Authorization: token ? `Bearer ${token}` : '',
+    },
+  });
+  if (!response.ok) {
+    const err = await response.json().catch(() => ({ detail: 'Download failed' }));
+    throw new Error(err.detail || 'Download failed');
+  }
+  const blob = await response.blob();
+  const url = window.URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  window.URL.revokeObjectURL(url);
+}
+
 export default api;
