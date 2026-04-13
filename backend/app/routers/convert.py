@@ -78,6 +78,25 @@ def list_history(
     return db.query(Conversion).filter(Conversion.owner_id == current_user.id).order_by(Conversion.created_at.desc()).all()
 
 
+@router.delete("/history/{conversion_id}")
+def delete_conversion(
+    conversion_id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    conv = db.query(Conversion).filter(Conversion.id == conversion_id, Conversion.owner_id == current_user.id).first()
+    if not conv:
+        raise HTTPException(status_code=404, detail="File not found")
+
+    file_path = os.path.join(CONVERTED_DIR, str(current_user.id), conv.stored_filename)
+    if os.path.exists(file_path):
+        os.remove(file_path)
+
+    db.delete(conv)
+    db.commit()
+    return {"detail": "Conversion deleted successfully"}
+
+
 @router.get("/download/{conversion_id}")
 def download_file(
     conversion_id: int,

@@ -23,7 +23,8 @@ export default function History() {
   const [items, setItems] = useState<Conversion[]>([]);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
+  const fetchHistory = () => {
+    setLoading(true);
     api
       .get('/convert/history')
       .then((res) => setItems(res.data))
@@ -31,7 +32,23 @@ export default function History() {
         toast.error(t('errors.loadHistory'));
       })
       .finally(() => setLoading(false));
+  };
+
+  useEffect(() => {
+    fetchHistory();
   }, [t]);
+
+  const handleDelete = async (id: number) => {
+    if (!window.confirm(t('historyTable.confirmDelete'))) return;
+    try {
+      await api.delete(`/convert/history/${id}`);
+      toast.success(t('historyTable.deleted'));
+      setItems((prev) => prev.filter((i) => i.id !== id));
+    } catch (err: any) {
+      const detail = err.response?.data?.detail;
+      toast.error(detail || t('errors.generic'));
+    }
+  };
 
   if (loading) {
     return <p className="text-gray-600">{t('historyTable.loading')}</p>;
@@ -63,17 +80,25 @@ export default function History() {
               <td className="px-4 py-3 text-gray-600">{formatBytes(item.file_size)}</td>
               <td className="px-4 py-3 text-gray-600">{formatDate(item.created_at)}</td>
               <td className="px-4 py-3 text-right">
-                <button
-                  onClick={() => {
-                    const name = item.original_filename.replace(/\.[^/.]+$/, '') + '.md';
-                    downloadConversion(item.id, name).catch((err: any) => {
-                      toast.error(err.message || t('errors.generic'));
-                    });
-                  }}
-                  className="inline-flex items-center px-3 py-1.5 rounded-md bg-indigo-50 text-indigo-700 hover:bg-indigo-100 transition"
-                >
-                  {t('historyTable.download')}
-                </button>
+                <div className="inline-flex items-center gap-2">
+                  <button
+                    onClick={() => {
+                      const name = item.original_filename.replace(/\.[^/.]+$/, '') + '.md';
+                      downloadConversion(item.id, name).catch((err: any) => {
+                        toast.error(err.message || t('errors.generic'));
+                      });
+                    }}
+                    className="inline-flex items-center px-3 py-1.5 rounded-md bg-indigo-50 text-indigo-700 hover:bg-indigo-100 transition"
+                  >
+                    {t('historyTable.download')}
+                  </button>
+                  <button
+                    onClick={() => handleDelete(item.id)}
+                    className="inline-flex items-center px-3 py-1.5 rounded-md bg-red-50 text-red-700 hover:bg-red-100 transition"
+                  >
+                    {t('historyTable.delete')}
+                  </button>
+                </div>
               </td>
             </tr>
           ))}

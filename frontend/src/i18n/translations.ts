@@ -64,6 +64,9 @@ export const translations = {
       date: 'Date',
       action: 'Action',
       download: 'Download',
+      delete: 'Delete',
+      confirmDelete: 'Are you sure you want to delete this conversion?',
+      deleted: 'Conversion deleted successfully',
       loading: 'Loading history…',
     },
     errors: {
@@ -143,6 +146,9 @@ export const translations = {
       date: 'Fecha',
       action: 'Acción',
       download: 'Descargar',
+      delete: 'Eliminar',
+      confirmDelete: '¿Estás seguro de que quieres eliminar esta conversión?',
+      deleted: 'Conversión eliminada correctamente',
       loading: 'Cargando historial…',
     },
     errors: {
