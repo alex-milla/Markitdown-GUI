@@ -1,9 +1,20 @@
 import { useState, useCallback } from 'react';
 import toast from 'react-hot-toast';
 import api from '../api';
+import { useTranslation } from '../i18n/LanguageContext';
 import type { Conversion } from '../types';
 
+function translateError(t: (key: string) => string, detail?: string): string {
+  const map: Record<string, string> = {
+    'Conversion failed': 'converter.error',
+    'No filename provided': 'errors.generic',
+  };
+  const key = detail && map[detail] ? map[detail] : 'errors.generic';
+  return t(key);
+}
+
 export default function Converter() {
+  const { t } = useTranslation();
   const [dragActive, setDragActive] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [lastResult, setLastResult] = useState<Conversion | null>(null);
@@ -42,10 +53,10 @@ export default function Converter() {
         headers: { 'Content-Type': 'multipart/form-data' },
       });
       setLastResult(res.data);
-      toast.success('Conversion successful!');
+      toast.success(t('converter.success'));
     } catch (err: any) {
-      const msg = err.response?.data?.detail || 'Conversion failed';
-      toast.error(msg);
+      const detail = err.response?.data?.detail;
+      toast.error(translateError(t, detail));
     } finally {
       setUploading(false);
     }
@@ -71,20 +82,20 @@ export default function Converter() {
         />
         <label htmlFor="file-upload" className="cursor-pointer block">
           <p className="text-lg font-medium text-gray-700">
-            {uploading ? 'Converting, please wait…' : 'Drag & drop a file here, or click to browse'}
+            {uploading ? t('converter.uploading') : t('converter.dragDrop')}
           </p>
           <p className="text-sm text-gray-500 mt-2">
-            Supported formats: PDF, Word, PowerPoint, Excel, Images, Audio, HTML, and more.
+            {t('converter.supportedFormats')}
           </p>
         </label>
       </div>
 
       {lastResult && (
         <div className="bg-white border rounded-xl p-6 shadow-sm">
-          <h3 className="text-lg font-semibold mb-2">Last conversion</h3>
+          <h3 className="text-lg font-semibold mb-2">{t('converter.lastConversion')}</h3>
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
             <div>
-              <p className="text-sm text-gray-600">Original file</p>
+              <p className="text-sm text-gray-600">{t('converter.originalFile')}</p>
               <p className="font-medium">{lastResult.original_filename}</p>
             </div>
             <a
@@ -92,7 +103,7 @@ export default function Converter() {
               download
               className="inline-flex items-center justify-center px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 transition"
             >
-              Download Markdown
+              {t('converter.downloadMarkdown')}
             </a>
           </div>
         </div>

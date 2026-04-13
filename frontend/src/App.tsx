@@ -3,10 +3,12 @@ import toast, { Toaster } from 'react-hot-toast';
 import LoginForm from './components/LoginForm';
 import Converter from './components/Converter';
 import History from './components/History';
+import { useTranslation } from './i18n/LanguageContext';
 import api from './api';
 import type { User } from './types';
 
 function App() {
+  const { t, lang, setLang } = useTranslation();
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<'convert' | 'history'>('convert');
@@ -28,7 +30,7 @@ function App() {
 
   const handleLogin = (u: User) => {
     setUser(u);
-    toast.success(`Welcome, ${u.username}!`);
+    toast.success(`${t('welcome')}, ${u.username}!`);
   };
 
   const handleLogout = () => {
@@ -40,7 +42,7 @@ function App() {
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
-        <span className="text-lg font-medium">Loading…</span>
+        <span className="text-lg font-medium">{t('loading')}</span>
       </div>
     );
   }
@@ -62,14 +64,26 @@ function App() {
       <div className="min-h-screen flex flex-col">
         <header className="bg-white shadow-sm border-b">
           <div className="max-w-5xl mx-auto px-4 py-4 flex items-center justify-between">
-            <h1 className="text-xl font-bold text-indigo-600">MarkItDown GUI</h1>
+            <h1 className="text-xl font-bold text-indigo-600">{t('appName')}</h1>
             <div className="flex items-center gap-4">
+              <div className="flex items-center gap-2">
+                <label htmlFor="lang-select" className="text-sm text-gray-600 hidden sm:inline">{t('language')}:</label>
+                <select
+                  id="lang-select"
+                  value={lang}
+                  onChange={(e) => setLang(e.target.value as 'es' | 'en')}
+                  className="text-sm border rounded-md px-2 py-1 bg-white"
+                >
+                  <option value="es">{t('languages.es')}</option>
+                  <option value="en">{t('languages.en')}</option>
+                </select>
+              </div>
               <span className="text-sm text-gray-600">{user.username}</span>
               <button
                 onClick={handleLogout}
                 className="text-sm px-3 py-1.5 rounded-md border border-gray-300 hover:bg-gray-100 transition"
               >
-                Log out
+                {t('logout')}
               </button>
             </div>
           </div>
@@ -85,7 +99,7 @@ function App() {
                   : 'bg-white border text-gray-700 hover:bg-gray-50'
               }`}
             >
-              Convert
+              {t('convert')}
             </button>
             <button
               onClick={() => setActiveTab('history')}
@@ -95,7 +109,7 @@ function App() {
                   : 'bg-white border text-gray-700 hover:bg-gray-50'
               }`}
             >
-              History
+              {t('history')}
             </button>
           </div>
 

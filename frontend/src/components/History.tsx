@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import toast from 'react-hot-toast';
 import api from '../api';
+import { useTranslation } from '../i18n/LanguageContext';
 import type { Conversion } from '../types';
 
 function formatBytes(bytes: number | null) {
@@ -18,6 +19,7 @@ function formatDate(iso: string) {
 }
 
 export default function History() {
+  const { t } = useTranslation();
   const [items, setItems] = useState<Conversion[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -25,20 +27,20 @@ export default function History() {
     api
       .get('/convert/history')
       .then((res) => setItems(res.data))
-      .catch((err) => {
-        toast.error(err.response?.data?.detail || 'Failed to load history');
+      .catch(() => {
+        toast.error(t('errors.loadHistory'));
       })
       .finally(() => setLoading(false));
-  }, []);
+  }, [t]);
 
   if (loading) {
-    return <p className="text-gray-600">Loading history…</p>;
+    return <p className="text-gray-600">{t('historyTable.loading')}</p>;
   }
 
   if (items.length === 0) {
     return (
       <div className="bg-white border rounded-xl p-8 text-center text-gray-600">
-        No conversions yet. Upload your first file in the <strong>Convert</strong> tab.
+        {t('historyTable.empty')}
       </div>
     );
   }
@@ -48,10 +50,10 @@ export default function History() {
       <table className="min-w-full text-sm text-left">
         <thead className="bg-gray-100 text-gray-700 uppercase">
           <tr>
-            <th className="px-4 py-3 font-medium">Original file</th>
-            <th className="px-4 py-3 font-medium">Size</th>
-            <th className="px-4 py-3 font-medium">Date</th>
-            <th className="px-4 py-3 font-medium text-right">Action</th>
+            <th className="px-4 py-3 font-medium">{t('historyTable.originalFile')}</th>
+            <th className="px-4 py-3 font-medium">{t('historyTable.size')}</th>
+            <th className="px-4 py-3 font-medium">{t('historyTable.date')}</th>
+            <th className="px-4 py-3 font-medium text-right">{t('historyTable.action')}</th>
           </tr>
         </thead>
         <tbody className="divide-y">
@@ -66,7 +68,7 @@ export default function History() {
                   download
                   className="inline-flex items-center px-3 py-1.5 rounded-md bg-indigo-50 text-indigo-700 hover:bg-indigo-100 transition"
                 >
-                  Download
+                  {t('historyTable.download')}
                 </a>
               </td>
             </tr>
