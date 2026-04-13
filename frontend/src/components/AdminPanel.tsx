@@ -12,6 +12,10 @@ export default function AdminPanel() {
   const [newPassword, setNewPassword] = useState('');
   const [creating, setCreating] = useState(false);
 
+  const [upgradePending, setUpgradePending] = useState(false);
+  const [upgradeLog, setUpgradeLog] = useState('');
+  const [upgrading, setUpgrading] = useState(false);
+
   const fetchUsers = async () => {
     setLoading(true);
     try {
@@ -25,8 +29,21 @@ export default function AdminPanel() {
     }
   };
 
+  const fetchUpgradeStatus = async () => {
+    try {
+      const res = await api.get('/auth/upgrade/status');
+      setUpgradePending(res.data.pending);
+      setUpgradeLog(res.data.log);
+    } catch {
+      // ignore
+    }
+  };
+
   useEffect(() => {
     fetchUsers();
+    fetchUpgradeStatus();
+    const interval = setInterval(fetchUpgradeStatus, 5000);
+    return () => clearInterval(interval);
   }, []);
 
   const handleCreate = async (e: React.FormEvent) => {
@@ -62,8 +79,46 @@ export default function AdminPanel() {
     }
   };
 
+  const handleUpgrade = async () => {
+    setUpgrading(true);
+    try {
+      const res = await api.post('/auth/upgrade');
+      toast.success(res.data.detail);
+      setUpgradePending(true);
+    } catch (err: any) {
+      const detail = err.response?.data?.detail;
+      toast.error(detail || t('errors.generic'));
+    } finally {
+      setUpgrading(false);
+    }
+  };
+
   return (
     <div className="space-y-6">
+      <div className="bg-white rounded-xl shadow-sm border p-6">
+        <div className="flex items-center justify-between mb-4">
+          <h3 className="text-lg font-semibold">{t('adminPanel.systemTitle')}</h3>
+          <button
+            onClick={handleUpgrade}
+            disabled={upgrading || upgradePending}
+            className="bg-emerald-600 text-white px-4 py-2 rounded-md font-medium hover:bg-emerald-700 disabled:opacity-60 transition"
+          >
+            {upgradePending ? t('adminPanel.upgradePending') : t('adminPanel.upgradeBtn')}
+          </button>
+        </div>
+        {upgradePending && (
+          <p className="text-sm text-amber-600 mb-2">{t('adminPanel.upgradePendingMsg')}</p>
+        )}
+        {upgradeLog && (
+          <div className="mt-2">
+            <p className="text-xs font-medium text-gray-500 uppercase mb-1">{t('adminPanel.upgradeLog')}</p>
+            <pre className="bg-gray-900 text-gray-100 text-xs p-3 rounded-md max-h-48 overflow-auto whitespace-pre-wrap">
+              {upgradeLog}
+            </pre>
+          </div>
+        )}
+      </div>
+
       <div className="bg-white rounded-xl shadow-sm border p-6">
         <h3 className="text-lg font-semibold mb-4">{t('adminPanel.createUser')}</h3>
         <form onSubmit={handleCreate} className="flex flex-col sm:flex-row gap-4 items-end">

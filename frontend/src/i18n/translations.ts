@@ -29,6 +29,7 @@ export const translations = {
     },
     adminPanel: {
       title: 'User management',
+      systemTitle: 'System',
       createUser: 'Create user',
       username: 'Username',
       password: 'Password',
@@ -38,6 +39,10 @@ export const translations = {
       userCreated: 'User created successfully',
       userDeleted: 'User deleted successfully',
       noUsers: 'No users found',
+      upgradeBtn: 'Upgrade from GitHub',
+      upgradePending: 'Upgrade pending',
+      upgradePendingMsg: 'An upgrade is already scheduled and will start within 1 minute.',
+      upgradeLog: 'Upgrade log',
     },
     converter: {
       dragDrop: 'Drag & drop a file here, or click to browse',
@@ -101,6 +106,7 @@ export const translations = {
     },
     adminPanel: {
       title: 'Gestión de usuarios',
+      systemTitle: 'Sistema',
       createUser: 'Crear usuario',
       username: 'Usuario',
       password: 'Contraseña',
@@ -110,6 +116,10 @@ export const translations = {
       userCreated: 'Usuario creado correctamente',
       userDeleted: 'Usuario eliminado correctamente',
       noUsers: 'No se encontraron usuarios',
+      upgradeBtn: 'Actualizar desde GitHub',
+      upgradePending: 'Actualización pendiente',
+      upgradePendingMsg: 'Ya hay una actualización programada y comenzará en menos de 1 minuto.',
+      upgradeLog: 'Registro de actualización',
     },
     converter: {
       dragDrop: 'Arrastra y suelta un archivo aquí, o haz clic para explorar',

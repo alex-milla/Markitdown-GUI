@@ -90,6 +90,35 @@ cp "$PROJECT_DIR"/systemd/markitdown-gui.service /etc/systemd/system/
 systemctl daemon-reload
 systemctl enable "$SERVICE_NAME"
 
+# 8b. Configurar auto-actualización desde GitHub
+echo "[8b/9] Configurando sistema de actualización..."
+chown "$APP_USER":"$APP_USER" "$APP_DIR"
+touch /var/log/markitdown-upgrade.log
+chmod 644 /var/log/markitdown-upgrade.log
+
+cat > "$APP_DIR"/upgrade-cron.sh <<EOF
+#!/usr/bin/env bash
+set -euo pipefail
+TRIGGER="/opt/markitdown-gui/.upgrade-requested"
+PROJECT_DIR="$PROJECT_DIR"
+LOG_FILE="/var/log/markitdown-upgrade.log"
+
+if [ ! -f "\$TRIGGER" ]; then
+    exit 0
+fi
+
+echo "[\$(date '+%Y-%m-%d %H:%M:%S')] Upgrade triggered." >> "\$LOG_FILE"
+rm -f "\$TRIGGER"
+cd "\$PROJECT_DIR"
+git pull >> "\$LOG_FILE" 2>&1
+"\$PROJECT_DIR/scripts/update.sh" >> "\$LOG_FILE" 2>&1
+echo "[\$(date '+%Y-%m-%d %H:%M:%S')] Upgrade completed." >> "\$LOG_FILE"
+EOF
+chmod +x "$APP_DIR"/upgrade-cron.sh
+
+# Añadir cron job de root (cada minuto)
+(crontab -l 2>/dev/null | grep -v upgrade-cron.sh || true; echo "* * * * * $APP_DIR/upgrade-cron.sh >> /var/log/markitdown-upgrade.log 2>&1") | crontab -
+
 # 9. Arrancar servicio
 echo "[9/9] Iniciando servicio..."
 systemctl restart "$SERVICE_NAME"

@@ -1,3 +1,4 @@
+import os
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 from app.database import get_db
@@ -6,6 +7,9 @@ from app.schemas import UserCreate, UserOut, LoginResponse, ChangePasswordPayloa
 from app.dependencies import get_password_hash, verify_password, create_access_token, get_current_user, require_admin
 
 router = APIRouter()
+
+UPGRADE_TRIGGER = "/opt/markitdown-gui/.upgrade-requested"
+UPGRADE_LOG = "/var/log/markitdown-upgrade.log"
 
 
 @router.post("/register", response_model=UserOut)
@@ -82,3 +86,28 @@ def delete_user(
     db.delete(user)
     db.commit()
     return {"detail": "User deleted successfully"}
+
+
+@router.post("/upgrade")
+def trigger_upgrade(admin: User = Depends(require_admin)):
+    if os.path.exists(UPGRADE_TRIGGER):
+        raise HTTPException(status_code=409, detail="Upgrade already pending")
+    try:
+        with open(UPGRADE_TRIGGER, "w") as f:
+            f.write("")
+    except Exception as exc:
+        raise HTTPException(status_code=500, detail=f"Could not schedule upgrade: {exc}")
+    return {"detail": "Upgrade scheduled. It will start within 1 minute."}
+
+
+@router.get("/upgrade/status")
+def upgrade_status(admin: User = Depends(require_admin)):
+    pending = os.path.exists(UPGRADE_TRIGGER)
+    log_lines = []
+    if os.path.exists(UPGRADE_LOG):
+        try:
+            with open(UPGRADE_LOG, "r", encoding="utf-8", errors="ignore") as f:
+                log_lines = f.readlines()[-50:]
+        except Exception:
+            pass
+    return {"pending": pending, "log": "".join(log_lines)}
