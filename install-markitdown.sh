@@ -9,24 +9,27 @@ echo "=== Instalando microsoft/markitdown ==="
 apt-get update
 apt-get install -y --no-install-recommends \
     python3 python3-venv python3-pip \
-    libmagic1 poppler-utils \
+    libmagic1 poppler-utils ffmpeg \
     build-essential
 
-# Si existe el entorno virtual del proyecto, usarlo; si no, crear uno nuevo
+# Determinar qué entorno virtual usar
 if [ -d "$VENV_PATH" ]; then
-    echo "Instalando en el entorno virtual existente: $VENV_PATH"
-    "$VENV_PATH/bin/pip" install --upgrade pip
-    "$VENV_PATH/bin/pip" install "markitdown[all]"
-    echo "=== markitdown instalado correctamente ==="
-    echo "Ubicación: $VENV_PATH/bin/markitdown"
-    "$VENV_PATH/bin/markitdown" --version || true
+    TARGET_VENV="$VENV_PATH"
+    echo "Instalando en el entorno virtual existente: $TARGET_VENV"
 else
-    echo "No se encontró el entorno virtual del proyecto. Creando uno nuevo en /opt/markitdown-venv..."
-    python3 -m venv /opt/markitdown-venv
-    /opt/markitdown-venv/bin/pip install --upgrade pip
-    /opt/markitdown-venv/bin/pip install "markitdown[all]"
-    echo "=== markitdown instalado correctamente ==="
-    echo "Ubicación: /opt/markitdown-venv/bin/markitdown"
-    /opt/markitdown-venv/bin/markitdown --version || true
-    echo "Añade /opt/markitdown-venv/bin al PATH o usa la ruta completa."
+    TARGET_VENV="/opt/markitdown-venv"
+    echo "No se encontró el entorno virtual del proyecto. Creando uno nuevo en $TARGET_VENV..."
+    python3 -m venv "$TARGET_VENV"
 fi
+
+# Instalar/actualizar markitdown
+"$TARGET_VENV/bin/pip" install --upgrade pip
+"$TARGET_VENV/bin/pip" install "markitdown[all]"
+
+# Crear enlace simbólico global para que esté en PATH
+ln -sf "$TARGET_VENV/bin/markitdown" /usr/local/bin/markitdown
+
+echo "=== markitdown instalado correctamente ==="
+echo "Ubicación: $TARGET_VENV/bin/markitdown"
+echo "Enlace global: /usr/local/bin/markitdown"
+markitdown --version || true
